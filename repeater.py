@@ -4,7 +4,6 @@ import sys
 from collections import defaultdict
 
 def main(args):
-
     import argparse
     parser = argparse.ArgumentParser(description='repeat the task of filling out known campaign tags from last month')
     parser.add_argument('primer', type=argparse.FileType('rb'),
@@ -14,19 +13,23 @@ def main(args):
     parser.add_argument('--output', type=argparse.FileType('wb'),
         help="output the results to this file")
     opts = parser.parse_args(args)
+    # In case output is not given, use stdout
+    output = sys.stdout if not "output" in vars(opts) else opts.output
+    repeat_files(opts.primer, opts.input, output)
 
-    # TODO: open a file to write to
-    if not opts.output:
-        output = sys.stdout
 
-    # TODO: Convert the csv file names into tables
+def repeat_files(primer, input, out):
+    # TODO: Make this match the csv output from OpenOffice
+    primer_reader = csv.reader(primer)
+    input_reader = csv.reader(input)
+    # Campaign type (column #0) depends on campaign tag (column #1)
+    completed = repeat_tables(primer_reader, input_reader, { 0 : 1 })
+    output_writer = csv.writer(out, quotechar='"', delimiter=',', quoting=csv.QUOTE_ALL)
+    for row in completed:
+        output_writer.writerow(row)
 
-    primer = csv.reader(opts.primer)
-    table = csv.reader(opts.input)
-    # Campaign type depends on campaign tag
-    repeat(primer, table, { 0 : 1 })
 
-def repeat(primer, table, dependencies, ignore_header=True):
+def repeat_tables(primer, table, dependencies, ignore_header=True):
     """
     Build a knowledge map from the previous table and use that to fill in any
     empty values in the given table.
@@ -36,14 +39,19 @@ def repeat(primer, table, dependencies, ignore_header=True):
         - There are no duplicate values for a given column to map
 
     """
-    import pdb
-    pdb.set_trace()
     knowledge_map = learn(primer, dependencies)
-    # TODO: Go through the tables and map the known values from the knowledge map
-    # Sorry I made dependencies a level more abstract than you wanted.
-    # Just use knowledge_map['campaign type'][campaigntype] to get the learned value
-    # for that campaign type... beitch
-        
+    completed = []
+    for row in table:
+        # copy everything over
+        completed_row = row
+        for dvcol, ivcol in dependencies.items():
+            iv = row[ivcol]
+            # if the value is empty and we know what to put
+            if row[dvcol] == "" and iv in knowledge_map[dvcol]:
+                # fill in what we learned
+                completed_row[dvcol] = knowledge_map[dvcol][iv]
+        completed.append(completed_row)
+    return completed
 
 def learn(primer, dependencies):
     """Constructs a knowledge map from a given table.
@@ -55,7 +63,7 @@ def learn(primer, dependencies):
     """
     knowledge_map = defaultdict(dict)
     for row in primer:
-        for dv, iv in dependencies.items():
+        for dvcol, ivcol in dependencies.items():
             # knowledge of the dependent value is mapped to the value
             # of the independent value col
             #
@@ -64,7 +72,7 @@ def learn(primer, dependencies):
             #   a dict is constructed automatically
             # - the value of the iv col is used
             # - overwrites the previous known relationship
-            knowledge_map[dv][row[iv]] = row[dv]
+            knowledge_map[dvcol][row[ivcol]] = row[dvcol]
     return knowledge_map
 
 if __name__ == '__main__':    
