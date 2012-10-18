@@ -1,5 +1,11 @@
 *.py[co]
 
+# Operation System
+.DS_Store
+
+# Editors
+*.swp
+
 # Packages
 *.egg
 *.egg-info
