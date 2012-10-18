@@ -1,5 +1,9 @@
+#!/usr/bin/python
+
+import csv
 import unittest
 import sys
+from itertools import izip
 from StringIO import StringIO
 
 from repeater import learn, main, repeat_files, repeat_tables
@@ -39,12 +43,13 @@ class TestLearnKnowledgeMap(unittest.TestCase):
 class TestRepeaterCLI(unittest.TestCase):
 
     def testSampleData(self):
-        strout = StringIO()
-    	repeat_files(open('last_month.csv', 'rb'), open('next_month_input.csv', 'rb'), strout)
-        with open('next_month_complete.csv', 'rb') as f:
-            expected = f.read()
-        # TODO: Fix this up
-    	self.assertEqual(strout.getvalue(), expected)
+        resultIO = StringIO()
+    	repeat_files(open('last_month.csv', 'rb'), open('next_month_input.csv', 'rb'), resultIO)
+        resultData = csv.reader(resultIO.getvalue())
+        with open('next_month_complete.csv', 'rb') as expectedFile:
+            expectedData = csv.reader(expectedFile)
+            for expected, actual in izip(expectedData, resultData):
+                self.assertEqual(expected, actual)
 
 if __name__ == '__main__':
     unittest.main()
