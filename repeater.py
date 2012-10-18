@@ -1,3 +1,5 @@
+#!python
+
 import csv
 import sys
     
@@ -20,8 +22,8 @@ def main(args):
 
 def repeat_files(primer, input, out):
     # TODO: Make this match the csv output from OpenOffice
-    primer_reader = csv.reader(primer)
-    input_reader = csv.reader(input)
+    primer_reader = csv.reader(primer, escapechar='\\')
+    input_reader = csv.reader(input, escapechar='\\')
     # Campaign type (column #0) depends on campaign tag (column #1)
     completed = repeat_tables(primer_reader, input_reader, { 0 : 1 })
     output_writer = csv.writer(out, quotechar='"', delimiter=',', quoting=csv.QUOTE_ALL)
